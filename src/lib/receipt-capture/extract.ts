@@ -888,7 +888,7 @@ function extractPolicies(
 			continue;
 		}
 		const durationContinuation =
-			/^\s*(\d{1,4})(?:\s+|[-‐‑‒–—]\s*)(days?|weeks?|months?|years?)\b/i.exec(
+			/^\s*(\d{1,4})(?:\s+|[-‐‑‒–—]\s*)(days?|weeks?|months?|years?)(?:\s+with\s+(?:an?\s+)?receipt\.?)?\s*$/i.exec(
 				text,
 			);
 		const canAttachDurationContinuation =

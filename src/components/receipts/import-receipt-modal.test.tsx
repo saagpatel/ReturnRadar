@@ -101,7 +101,7 @@ describe("ImportReceiptModal confirmation flow", () => {
 		const transactionDate = screen.getByLabelText("Transaction date");
 		const dueDate = screen.getByLabelText(/^Due date for deadline/);
 		expect(dueDate).toHaveValue("2027-02-28");
-		fireEvent.change(transactionDate, { target: { value: "2026-03-01" } });
+		fireEvent.input(transactionDate, { target: { value: "2026-03-01" } });
 		expect(dueDate).toHaveValue("2027-03-01");
 		const finalButton = screen.getByRole("button", {
 			name: /Confirm and create 1 deadline/,
@@ -260,11 +260,26 @@ describe("ImportReceiptModal confirmation flow", () => {
 		const dueDate = screen.getByLabelText(/^Due date for deadline 1:/);
 		const reviewed = screen.getByRole("checkbox", { name: /^Reviewed deadline 1:/ });
 		expect(date).toHaveValue("");
+		expect(date).toHaveAttribute("type", "text");
+		expect(date).toHaveAttribute("placeholder", "YYYY-MM-DD");
 		expect(dueDate).toHaveValue("");
+		expect(dueDate).toHaveAttribute("type", "text");
+		expect(dueDate).toHaveAttribute("placeholder", "YYYY-MM-DD");
 		expect(select).not.toBeChecked();
 		expect(reviewed).toBeDisabled();
 
-		fireEvent.change(date, { target: { value: "2026-03-04" } });
+		fireEvent.input(date, { target: { value: "2026-02-30" } });
+		expect(screen.getByRole("alert")).toHaveTextContent(
+			"Enter a valid date as YYYY-MM-DD.",
+		);
+		expect(dueDate).toHaveValue("");
+
+		Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(
+			date,
+			"2026-03-04",
+		);
+		fireEvent.blur(date);
+		expect(screen.queryByText("Enter a valid date as YYYY-MM-DD.")).not.toBeInTheDocument();
 		expect(dueDate).toHaveValue("2026-04-03");
 		fireEvent.click(select);
 		fireEvent.click(
@@ -478,6 +493,7 @@ describe("ImportReceiptModal confirmation flow", () => {
 		expect(
 			await screen.findByRole("alert", { name: "" }),
 		).toHaveTextContent("unsafe_document: malformed synthetic PDF");
+		expect(screen.getByLabelText("Choose receipt or policy document")).toHaveValue("");
 
 		fireEvent.change(screen.getByLabelText("Choose receipt or policy document"), {
 			target: { files: [new File(["valid"], "valid.png", { type: "image/png" })] },

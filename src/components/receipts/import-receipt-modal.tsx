@@ -101,6 +101,20 @@ function merchantIsValid(value: string): boolean {
 	return Array.from(value.trim()).length <= MAX_MERCHANT_CHARACTERS;
 }
 
+function isIsoCalendarDate(value: string): boolean {
+	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+	if (!match) return false;
+	const year = Number(match[1]);
+	const month = Number(match[2]);
+	const day = Number(match[3]);
+	const parsed = new Date(Date.UTC(year, month - 1, day));
+	return (
+		parsed.getUTCFullYear() === year &&
+		parsed.getUTCMonth() === month - 1 &&
+		parsed.getUTCDate() === day
+	);
+}
+
 export function ImportReceiptModal({
 	open,
 	onOpenChange,
@@ -196,6 +210,7 @@ export function ImportReceiptModal({
 		} catch (caught: unknown) {
 			if (extractionGeneration !== operationGenerationRef.current) return;
 			setError(caught instanceof Error ? caught.message : String(caught));
+			if (fileInputRef.current) fileInputRef.current.value = "";
 			setStage("select");
 		}
 	}
@@ -250,6 +265,8 @@ export function ImportReceiptModal({
 	}
 
 	const selectedDeadlines = deadlines.filter((deadline) => deadline.selected);
+	const transactionDateIsValid =
+		transactionDate.length === 0 || isIsoCalendarDate(transactionDate);
 	const receiptFactIssues = useMemo(() => {
 		const seen = new Set<string>();
 		return (capture?.issues ?? []).filter((entry) => {
@@ -273,12 +290,13 @@ export function ImportReceiptModal({
 		selectedDeadlines.length > 0 &&
 		selectedDeadlines.length <= MAX_CONFIRMED_DEADLINES &&
 		merchantIsValid(merchant) &&
+		transactionDateIsValid &&
 		(!receiptFactsRequireResolution || receiptFactsResolved) &&
 		selectedDeadlines.every(
 			(deadline) =>
 				deadline.ambiguityResolved &&
 				deadline.reviewed &&
-				/^\d{4}-\d{2}-\d{2}$/.test(deadline.dueDate) &&
+				isIsoCalendarDate(deadline.dueDate) &&
 				deadlineTitleIsValid(deadline.title),
 		);
 	const uniqueIssues = useMemo(() => {
@@ -335,11 +353,13 @@ export function ImportReceiptModal({
 				...deadline,
 				dueDate:
 					fieldName === "transaction_date" && !deadline.candidateId.startsWith("manual-")
-						? deriveDeadlineDateForPolicies(
-								deadline.type,
-								capture?.policyInterpretations ?? [],
-								value || null,
-							) ?? ""
+						? isIsoCalendarDate(value)
+							? deriveDeadlineDateForPolicies(
+									deadline.type,
+									capture?.policyInterpretations ?? [],
+									value,
+								) ?? ""
+							: ""
 						: deadline.dueDate,
 				reviewed: false,
 			})),
@@ -457,7 +477,7 @@ export function ImportReceiptModal({
 								<div className="flex items-center justify-between"><h3 id="receipt-facts-heading" className="font-semibold">Receipt facts</h3><span className="text-xs text-muted-foreground">What the document says</span></div>
 								<div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
 									<div className="grid gap-2"><div className="flex items-center justify-between gap-2"><Label htmlFor="capture-merchant">Merchant</Label><ConfidenceBadge level={capture.receiptFacts.merchant.confidenceLabel} /></div><Input id="capture-merchant" value={merchant} maxLength={MAX_MERCHANT_CHARACTERS} onChange={(event) => correctReceiptField("merchant", event.target.value)} aria-describedby="capture-merchant-limit" /><p id="capture-merchant-limit" className="text-xs text-muted-foreground">{MAX_MERCHANT_CHARACTERS} characters maximum.</p>{!merchantIsValid(merchant) ? <p className="text-xs text-destructive" role="alert">Shorten the merchant before confirmation.</p> : null}</div>
-									<div className="grid gap-2"><div className="flex items-center justify-between gap-2"><Label htmlFor="capture-date">Transaction date</Label><ConfidenceBadge level={capture.receiptFacts.transactionDate.confidenceLabel} /></div><Input id="capture-date" type="date" value={transactionDate} onChange={(event) => correctReceiptField("transaction_date", event.target.value)} /></div>
+									<div className="grid gap-2"><div className="flex items-center justify-between gap-2"><Label htmlFor="capture-date">Transaction date</Label><ConfidenceBadge level={capture.receiptFacts.transactionDate.confidenceLabel} /></div><Input id="capture-date" type="text" inputMode="numeric" placeholder="YYYY-MM-DD" maxLength={10} value={transactionDate} onInput={(event) => correctReceiptField("transaction_date", event.currentTarget.value)} onBlur={(event) => { if (event.currentTarget.value !== transactionDate) correctReceiptField("transaction_date", event.currentTarget.value); }} aria-describedby="capture-date-format" aria-invalid={!transactionDateIsValid} /><p id="capture-date-format" className="text-xs text-muted-foreground">YYYY-MM-DD. Empty means unresolved.</p>{!transactionDateIsValid ? <p className="text-xs text-destructive" role="alert">Enter a valid date as YYYY-MM-DD.</p> : null}</div>
 								</div>
 								{capture.receiptFacts.items.length > 0 && <div className="flex flex-wrap gap-2" aria-label="Extracted item candidates">{capture.receiptFacts.items.map((item, index) => <Badge key={`${item.name.value}-${index}`} variant="secondary">{item.name.value || "Unknown item"} · ${item.priceDollars.value || "—"}</Badge>)}</div>}
 								{receiptFactsRequireResolution && <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"><div role="status" aria-live="polite" aria-atomic="true"><p className="font-medium">Resolve receipt fact warnings</p><ul className="mt-1 list-disc space-y-1 pl-4 text-xs">{receiptFactIssues.map((entry) => <li key={`${entry.code}-${entry.field}`}>{entry.message}</li>)}</ul></div><div className="mt-3 flex items-center gap-2"><Checkbox id="receipt-facts-resolved" checked={receiptFactsResolved} onCheckedChange={(checked) => resolveReceiptFactWarnings(checked === true)} /><Label htmlFor="receipt-facts-resolved" className="text-sm font-medium">I verified or corrected every receipt fact warning above</Label></div></div>}
@@ -476,10 +496,10 @@ export function ImportReceiptModal({
 										<div className="flex items-start gap-3"><Checkbox id={`select-deadline-${index}`} checked={deadline.selected} disabled={!deadline.selected && selectedDeadlines.length >= MAX_CONFIRMED_DEADLINES} onCheckedChange={(checked) => updateDeadline(index, { selected: checked === true, reviewed: false })} aria-label={`Select deadline ${index + 1}: ${deadline.title || DEADLINE_LABELS[deadline.type]}`} /><div className="grid flex-1 gap-4 sm:grid-cols-[10rem_1fr_10rem]">
 											<div className="grid gap-2"><Label htmlFor={`deadline-type-${index}`}>Type</Label><Select value={deadline.type} onValueChange={(value) => updateDeadline(index, { type: value as DeadlineType }, "deadline_type")} disabled={!deadline.selected}><SelectTrigger id={`deadline-type-${index}`} aria-label={`Type for deadline ${index + 1}: ${deadline.title || DEADLINE_LABELS[deadline.type]}`}><SelectValue /></SelectTrigger><SelectContent>{Object.entries(DEADLINE_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
 											<div className="grid gap-2"><Label htmlFor={`deadline-title-${index}`}>Title</Label><Input id={`deadline-title-${index}`} value={deadline.title} maxLength={MAX_DEADLINE_TITLE_CHARACTERS} disabled={!deadline.selected} onChange={(event) => updateDeadline(index, { title: event.target.value }, "title")} aria-label={`Title for deadline ${index + 1}`} aria-describedby={`deadline-title-limit-${index}`} /><p id={`deadline-title-limit-${index}`} className="text-xs text-muted-foreground">{MAX_DEADLINE_TITLE_CHARACTERS} characters maximum.</p>{deadline.title.trim() && !deadlineTitleIsValid(deadline.title) ? <p className="text-xs text-destructive" role="alert">Shorten this title before review.</p> : null}</div>
-											<div className="grid gap-2"><Label htmlFor={`deadline-date-${index}`}>Due date</Label><Input id={`deadline-date-${index}`} type="date" value={deadline.dueDate} disabled={!deadline.selected} onChange={(event) => updateDeadline(index, { dueDate: event.target.value }, "due_date")} aria-label={`Due date for deadline ${index + 1}: ${deadline.title || DEADLINE_LABELS[deadline.type]}`} /></div>
+											<div className="grid gap-2"><Label htmlFor={`deadline-date-${index}`}>Due date</Label><Input id={`deadline-date-${index}`} type="text" inputMode="numeric" placeholder="YYYY-MM-DD" maxLength={10} value={deadline.dueDate} disabled={!deadline.selected} onInput={(event) => updateDeadline(index, { dueDate: event.currentTarget.value }, "due_date")} onBlur={(event) => { if (event.currentTarget.value !== deadline.dueDate) updateDeadline(index, { dueDate: event.currentTarget.value }, "due_date"); }} aria-label={`Due date for deadline ${index + 1}: ${deadline.title || DEADLINE_LABELS[deadline.type]}`} aria-invalid={deadline.selected && deadline.dueDate.length > 0 && !isIsoCalendarDate(deadline.dueDate)} />{deadline.selected && deadline.dueDate.length > 0 && !isIsoCalendarDate(deadline.dueDate) ? <p className="text-xs text-destructive" role="alert">Enter a valid date as YYYY-MM-DD.</p> : null}</div>
 										</div></div>
 									{deadline.requiresResolution && <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"><div role="status" aria-live="polite" aria-atomic="true"><p className="font-medium">Resolve extraction warnings</p><ul className="mt-1 list-disc space-y-1 pl-4 text-xs">{deadline.issues.map((entry) => <li key={`${entry.code}-${entry.field}`}>{entry.message}</li>)}</ul></div><div className="mt-3 flex items-center gap-2"><Checkbox id={`resolved-${index}`} checked={deadline.ambiguityResolved} disabled={!deadline.selected} onCheckedChange={(checked) => updateDeadline(index, { ambiguityResolved: checked === true, reviewed: false }, checked === true ? "ambiguity_resolution" : undefined)} aria-label={`Resolve every warning for deadline ${index + 1}: ${deadline.title || DEADLINE_LABELS[deadline.type]}`} /><Label htmlFor={`resolved-${index}`} className="text-sm font-medium">I verified and resolved every extraction warning above</Label></div></div>}
-									<div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-3">{deadline.evidence.length > 0 ? <details className="group text-xs text-muted-foreground"><summary className="flex cursor-pointer list-none items-center gap-1 font-medium"><ChevronDown className="size-3 transition-transform group-open:rotate-180" aria-hidden="true" /> Supporting evidence</summary><ul className="mt-2 max-w-xl space-y-1 pl-4">{deadline.evidence.slice(0, 4).map((span, spanIndex) => <li key={`${span.line}-${spanIndex}`}>Page {span.page ?? 1}: “{span.text}”</li>)}</ul></details> : <span className="text-xs text-muted-foreground">Manual entry · no extracted evidence</span>}<div className="flex items-center gap-2"><Checkbox id={`reviewed-${index}`} checked={deadline.reviewed} disabled={!deadline.selected || !deadline.ambiguityResolved || !deadlineTitleIsValid(deadline.title) || !/^\d{4}-\d{2}-\d{2}$/.test(deadline.dueDate)} onCheckedChange={(checked) => updateDeadline(index, { reviewed: checked === true })} aria-label={`Reviewed deadline ${index + 1}: ${deadline.title || DEADLINE_LABELS[deadline.type]}`} /><Label htmlFor={`reviewed-${index}`} className="text-sm font-medium">Reviewed</Label></div></div>
+									<div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-3">{deadline.evidence.length > 0 ? <details className="group text-xs text-muted-foreground"><summary className="flex cursor-pointer list-none items-center gap-1 font-medium"><ChevronDown className="size-3 transition-transform group-open:rotate-180" aria-hidden="true" /> Supporting evidence</summary><ul className="mt-2 max-w-xl space-y-1 pl-4">{deadline.evidence.slice(0, 4).map((span, spanIndex) => <li key={`${span.line}-${spanIndex}`}>Page {span.page ?? 1}: “{span.text}”</li>)}</ul></details> : <span className="text-xs text-muted-foreground">Manual entry · no extracted evidence</span>}<div className="flex items-center gap-2"><Checkbox id={`reviewed-${index}`} checked={deadline.reviewed} disabled={!deadline.selected || !deadline.ambiguityResolved || !deadlineTitleIsValid(deadline.title) || !isIsoCalendarDate(deadline.dueDate)} onCheckedChange={(checked) => updateDeadline(index, { reviewed: checked === true })} aria-label={`Reviewed deadline ${index + 1}: ${deadline.title || DEADLINE_LABELS[deadline.type]}`} /><Label htmlFor={`reviewed-${index}`} className="text-sm font-medium">Reviewed</Label></div></div>
 									</article>
 								))}</div>
 							</section>

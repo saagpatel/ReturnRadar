@@ -56,14 +56,28 @@ NODE
 }
 
 GLIB_PACKAGE_IDS=()
+GLIB_PACKAGE_IDS_FILE="$CHECK_DIR/glib-package-ids.txt"
+if ! audit_package_ids RUSTSEC-2024-0429 >"$GLIB_PACKAGE_IDS_FILE"; then
+	echo "Unable to parse affected packages for RUSTSEC-2024-0429" >&2
+	exit 1
+fi
 while IFS= read -r package_id; do
-	GLIB_PACKAGE_IDS+=("$package_id")
-done < <(audit_package_ids RUSTSEC-2024-0429)
+	if [[ -n "$package_id" ]]; then
+		GLIB_PACKAGE_IDS+=("$package_id")
+	fi
+done <"$GLIB_PACKAGE_IDS_FILE"
 
 RAND_PACKAGE_IDS=()
+RAND_PACKAGE_IDS_FILE="$CHECK_DIR/rand-package-ids.txt"
+if ! audit_package_ids RUSTSEC-2026-0097 >"$RAND_PACKAGE_IDS_FILE"; then
+	echo "Unable to parse affected packages for RUSTSEC-2026-0097" >&2
+	exit 1
+fi
 while IFS= read -r package_id; do
-	RAND_PACKAGE_IDS+=("$package_id")
-done < <(audit_package_ids RUSTSEC-2026-0097)
+	if [[ -n "$package_id" ]]; then
+		RAND_PACKAGE_IDS+=("$package_id")
+	fi
+done <"$RAND_PACKAGE_IDS_FILE"
 
 for target in "${TARGETS[@]}"; do
 	rsa_tree_file="$CHECK_DIR/rsa-$target.txt"

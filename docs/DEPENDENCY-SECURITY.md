@@ -17,17 +17,32 @@ macOS target graphs. If a future dependency or target-specific feature
 activates it, the check fails before the RustSec exception is applied.
 
 All other RustSec vulnerabilities remain release-blocking. Warning-class
-advisories are reviewed separately because Cargo may resolve optional or
-platform-specific packages that are not compiled for ReturnRadar's supported
-macOS target.
+advisories are reviewed separately because Cargo may resolve optional,
+build-only, or platform-specific packages that do not expose the reported
+condition in ReturnRadar's supported macOS target.
 
-At the current lockfile, the remaining warnings are not known vulnerabilities:
+At the current lockfile, two warning-class advisories require explicit,
+fail-closed target and feature checks:
 
-- GTK3 and GLib warnings are resolved for Linux targets but are absent from the
-  supported macOS graph.
-- `rand 0.7.3` is a build dependency used through Tauri's HTML selector stack;
-  its warning requires a custom logger calling `rand::rng()`, which ReturnRadar
-  does not define.
+- `glib 0.18.5` (`RUSTSEC-2024-0429`) is constrained by Tauri's GTK 0.18
+  dependency line. It is resolved for Linux but absent from both supported
+  macOS graphs. A direct `glib 0.20` pin is not compatible with that upstream
+  constraint.
+- `rand 0.7.3` (`RUSTSEC-2026-0097`) is constrained by Tauri's HTML selector
+  build chain. It has no normal or development dependency edge on either
+  supported macOS target, and its optional `log` feature is disabled, so the
+  advisory's custom logger precondition is absent. A direct `rand 0.8.6` pin is
+  not compatible with `phf_generator 0.8`.
+
+`script/check_rustsec.sh` reads cargo-audit's current advisory report and checks
+every affected `glib` and `rand` package instance in the lockfile for Apple
+silicon and Intel macOS. If an additional vulnerable version appears, either
+package becomes active outside the reviewed boundary, or the feature condition
+changes, CI fails and requires the exception to be reviewed or removed.
+
+Other current warnings remain maintenance signals:
+
+- GTK3 warnings are Linux-only for ReturnRadar's supported targets.
 - `spin 0.9.8` is yanked but is the version required by SQLx's current `flume`
   dependency. It remains an upgrade-tracking item.
 - Other unmaintained warnings are transitive maintenance signals and remain

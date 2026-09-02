@@ -887,6 +887,49 @@ function extractPolicies(
 			}
 			continue;
 		}
+		const durationContinuation =
+			/^\s*(\d{1,4})(?:\s+|[-‐‑‒–—]\s*)(days?|weeks?|months?|years?)(?:\s+with\s+(?:an?\s+)?receipt\.?)?\s*$/i.exec(
+				text,
+			);
+		const canAttachDurationContinuation =
+			typedClauses.length === 0 &&
+			durationContinuation !== null &&
+			lastPolicyGroup.length > 0 &&
+			index - lastPolicyLine === 1 &&
+			lines[lastPolicyLine]?.page === lines[index].page &&
+			lastPolicyGroup.every(
+				(policy) =>
+					policy.windowDays === null &&
+					policy.explicitDate === null &&
+					/\b(?:within|for|up\s+to)\s*$/i.test(policy.description),
+			);
+		if (canAttachDurationContinuation && durationContinuation) {
+			const amount = Number(durationContinuation[1]);
+			const unit = durationContinuation[2].toLowerCase();
+			const continuationEvidence = evidenceFor(lines, index);
+			for (const policy of lastPolicyGroup) {
+				policy.windowDays =
+					unit.startsWith("week")
+						? amount * 7
+						: unit.startsWith("year")
+							? amount * 365
+							: amount;
+				policy.windowUnit = unit.startsWith("month")
+					? "months"
+					: unit.startsWith("year")
+						? "years"
+						: "days";
+				policy.description = `${policy.description} ${redactSensitiveText(text)}`;
+				policy.evidence.push(continuationEvidence);
+				policy.issues.push(
+					...lineConfidenceIssue(`policy.${policy.type}`, [continuationEvidence]),
+				);
+				policy.confidence = Math.min(policy.confidence, continuationEvidence.confidence);
+				policy.confidenceLabel = confidenceLabel(policy.confidence);
+			}
+			lastPolicyLine = index;
+			continue;
+		}
 		if (typedClauses.length === 0) {
 			const isNearbyStandaloneExclusion =
 				isPolicyExclusion(text) &&

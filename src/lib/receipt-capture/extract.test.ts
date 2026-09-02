@@ -1020,6 +1020,66 @@ describe("confidence-gated receipt capture corpus", () => {
 		);
 	});
 
+	it("joins a duration split onto the next OCR line after a policy cue", () => {
+		const result = extractReceiptCapture(
+			[
+				{ text: "Atlas Goods", confidence: 0.96, page: 1 },
+				{ text: "Purchase date 2026-03-04", confidence: 0.96, page: 1 },
+				{ text: "Travel Pouch $18.00", confidence: 0.96, page: 1 },
+				{ text: "RETURN POLICY", confidence: 0.96, page: 1 },
+				{ text: "Returns accepted within", confidence: 0.96, page: 1 },
+				{ text: "30 days with receipt.", confidence: 0.96, page: 1 },
+			],
+			{ sourceFingerprint: "fixture:split-duration-next-line", sourceKind: "fixture" },
+		);
+
+		expect(result.policyInterpretations).toEqual([
+			expect.objectContaining({
+				type: "return",
+				windowDays: 30,
+				description: "Returns accepted within 30 days with receipt.",
+				evidence: expect.arrayContaining([
+					expect.objectContaining({ line: 4 }),
+					expect.objectContaining({ line: 5 }),
+				]),
+			}),
+		]);
+		expect(result.candidates).toEqual([
+			expect.objectContaining({
+				type: "return",
+				candidateDate: "2026-04-03",
+				state: "ready_for_confirmation",
+			}),
+		]);
+	});
+
+	it.each(["30 days or 60 days", "30 days for electronics"])(
+		"does not treat an ambiguous split duration as ready: %s",
+		(duration) => {
+			const result = extractReceiptCapture(
+				[
+					{ text: "Atlas Goods", confidence: 0.96, page: 1 },
+					{ text: "Purchase date 2026-03-04", confidence: 0.96, page: 1 },
+					{ text: "Travel Pouch $18.00", confidence: 0.96, page: 1 },
+					{ text: "Returns accepted within", confidence: 0.96, page: 1 },
+					{ text: duration, confidence: 0.96, page: 1 },
+				],
+				{ sourceFingerprint: "fixture:unsafe-split-duration", sourceKind: "fixture" },
+			);
+
+			expect(result.policyInterpretations).toEqual([
+				expect.objectContaining({ type: "return", windowDays: null }),
+			]);
+			expect(result.candidates).toEqual([
+				expect.objectContaining({
+					type: "return",
+					candidateDate: null,
+					state: "needs_correction",
+				}),
+			]);
+		},
+	);
+
 	it("preserves policy text and evidence after redacting a same-line address", () => {
 		const result = extractReceiptCapture(
 			[

@@ -25,5 +25,10 @@ What actually happened.
 
 ## Environment
 
-- OS: [e.g., macOS 15, Ubuntu 24.04]
+- OS: [e.g., macOS 15.6]
 - Version/commit: [e.g., v1.0.0 or commit hash]
+
+## Privacy check
+
+- [ ] I removed receipts, database files, credentials, and personal data from
+      this report and its attachments.

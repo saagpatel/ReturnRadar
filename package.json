@@ -10,7 +10,9 @@
 		"tauri": "tauri",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit",
+		"release:check": "bash script/check_release_metadata.sh",
+		"release:verify-bundle": "bash script/verify_macos_bundle.sh"
 	},
 	"dependencies": {
 		"@tailwindcss/vite": "4.2.2",

@@ -25,11 +25,13 @@ binary releases.
 
 ## Next product milestone
 
-- Complete the opt-in manual acceptance protocol on a supported macOS desktop.
+- Publish a Developer ID signed, Apple-notarized direct-distribution build from
+  an exact protected-main tag after the release gate passes.
 - Improve scanned-PDF feedback and recovery without retaining source documents.
 - Add focused accessibility regression coverage for the receipt correction and
   confirmation flow.
-- Prepare a signed and notarized macOS release with reproducible release notes.
+- Keep the opt-in manual acceptance protocol available as separate human
+  evidence; it is currently skipped and unproved.
 
 ## Product boundaries
 

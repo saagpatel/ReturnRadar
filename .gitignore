@@ -1,0 +1,23 @@
+# Dependencies
+node_modules
+
+# Build
+dist/
+dist-fixture/
+tmp/
+*.tsbuildinfo
+src-tauri/target/
+src-tauri/gen/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Environment
+.env
+.env.*
+!.env.example
+CLAUDE.md.bak

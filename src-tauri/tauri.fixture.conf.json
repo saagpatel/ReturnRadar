@@ -1,0 +1,15 @@
+{
+	"productName": "Return Radar Fixture",
+	"identifier": "com.returnradar.fixture",
+	"build": {
+		"beforeBuildCommand": "VITE_RETURNRADAR_DB_URL=sqlite:return_radar_fixture.db VITE_RETURNRADAR_DISABLE_NOTIFICATIONS=true npm run build -- --outDir dist-fixture",
+		"frontendDist": "../dist-fixture"
+	},
+	"app": {
+		"windows": [
+			{
+				"title": "Return Radar Fixture"
+			}
+		]
+	}
+}

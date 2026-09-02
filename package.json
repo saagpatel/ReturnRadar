@@ -1,0 +1,44 @@
+{
+	"name": "return-radar",
+	"private": true,
+	"version": "1.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc -b && vite build",
+		"preview": "vite preview",
+		"tauri": "tauri",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@tailwindcss/vite": "4.2.2",
+		"@tauri-apps/api": "2.11.1",
+		"@tauri-apps/plugin-notification": "2.3.3",
+		"@tauri-apps/plugin-sql": "2.3.2",
+		"class-variance-authority": "0.7.1",
+		"clsx": "2.1.1",
+		"date-fns": "4.1.0",
+		"lucide-react": "0.577.0",
+		"radix-ui": "1.4.3",
+		"react": "^19.1.0",
+		"react-dom": "^19.1.0",
+		"react-router-dom": "7.18.3",
+		"tailwind-merge": "3.5.0",
+		"tailwindcss": "4.2.2"
+	},
+	"devDependencies": {
+		"@tauri-apps/cli": "2.11.4",
+		"@testing-library/jest-dom": "6.9.1",
+		"@testing-library/react": "16.3.2",
+		"@types/node": "25.5.0",
+		"@types/react": "^19.1.0",
+		"@types/react-dom": "^19.1.0",
+		"@vitejs/plugin-react": "^4.5.2",
+		"jsdom": "26.1.0",
+		"typescript": "~5.8.3",
+		"vite": "6.4.3",
+		"vitest": "4.1.0"
+	}
+}

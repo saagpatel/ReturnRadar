@@ -33,6 +33,7 @@ jobs:
       - run: npm test
       - run: npm run typecheck
       - run: npm run build
+      - run: npm run release:check
 
   macos-native:
     name: macOS native
@@ -53,6 +54,7 @@ jobs:
         with:
           toolchain: stable
           components: clippy
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
       - run: npm ci
       - run: cargo test --manifest-path src-tauri/Cargo.toml --locked
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
@@ -66,6 +68,12 @@ jobs:
           VITE_RETURNRADAR_DB_URL: sqlite:return_radar_fixture.db
           VITE_RETURNRADAR_DISABLE_NOTIFICATIONS: "true"
         run: npm run tauri -- build --debug --bundles app --config src-tauri/tauri.fixture.conf.json
+      - name: Build ad hoc signed production app
+        env:
+          APPLE_SIGNING_IDENTITY: "-"
+        run: npm run tauri -- build --target universal-apple-darwin --bundles app
+      - name: Verify production app bundle
+        run: npm run release:verify-bundle -- "src-tauri/target/universal-apple-darwin/release/bundle/macos/Return Radar.app" adhoc universal
 
   secrets:
     name: Secret scan

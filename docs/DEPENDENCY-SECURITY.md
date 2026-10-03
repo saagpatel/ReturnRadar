@@ -11,10 +11,10 @@ The advisory has no patched release. ReturnRadar supports SQLite only and does
 not enable SQLx's MySQL feature, so `rsa` is absent from the feature-resolved
 macOS dependency graph.
 
-`script/check_rustsec.sh` permits this one lockfile advisory only after
-`cargo tree` proves that `rsa` is inactive for both Apple silicon and Intel
-macOS target graphs. If a future dependency or target-specific feature
-activates it, the check fails before the RustSec exception is applied.
+`script/check_rustsec.sh` reads the advisory report with this one lockfile
+advisory ignored, then requires `cargo tree` to prove that `rsa` is inactive for
+both Apple silicon and Intel macOS target graphs before accepting the result.
+If a future dependency or target-specific feature activates it, the check fails.
 
 All other RustSec vulnerabilities remain release-blocking. Warning-class
 advisories are reviewed separately because Cargo may resolve optional,

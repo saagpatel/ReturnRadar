@@ -1,19 +1,19 @@
 .PHONY: dev build test lint clean install
 
 install:
-	pnpm install
+	npm ci
 
 dev:
-	pnpm dev
+	npm run dev
 
 build:
-	pnpm build
+	npm run build
 
 test:
-	pnpm test
+	npm test
 
 lint:
-	pnpm lint
+	cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
 
 clean:
 	rm -rf node_modules dist .next .turbo

@@ -30,7 +30,7 @@ ReturnRadar is a local-first macOS desktop app that tracks purchase return windo
 ```bash
 git clone https://github.com/saagpatel/ReturnRadar.git
 cd ReturnRadar
-npm install
+npm ci
 ```
 
 ### Usage
@@ -47,6 +47,8 @@ npm run tauri build
 ```
 
 ## Development and security
+
+See [contributor verification](CONTRIBUTING.md#development-setup) for focused tests and the isolated fixture lane.
 
 Pull requests run frontend and Rust tests, strict TypeScript and Clippy checks,
 an isolated macOS fixture build, RustSec auditing, and repository-history secret

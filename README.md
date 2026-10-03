@@ -30,7 +30,7 @@ ReturnRadar is a local-first macOS desktop app that tracks purchase return windo
 ```bash
 git clone https://github.com/saagpatel/ReturnRadar.git
 cd ReturnRadar
-npm install
+npm ci
 ```
 
 ### Usage
@@ -48,6 +48,8 @@ npm run tauri build
 
 ## Development and security
 
+See [contributor verification](CONTRIBUTING.md#development-setup) for focused tests and the isolated fixture lane.
+
 Pull requests run frontend and Rust tests, strict TypeScript and Clippy checks,
 an isolated macOS fixture build, RustSec auditing, and repository-history secret
 scanning. CodeQL runs once the repository is public. See the
@@ -56,11 +58,12 @@ limitations](docs/RECEIPT-DEADLINE-CAPTURE.md), and [roadmap](IMPLEMENTATION-ROA
 
 ## Distribution status
 
-The repository contains release-candidate source at version `1.0.0`; it does
-not currently claim a signed, notarized, or published macOS binary. See the
-[distribution runbook](docs/DISTRIBUTION.md), [privacy summary](docs/PRIVACY.md),
-and [draft 1.0.0 release notes](docs/releases/v1.0.0.md). Direct-distribution
-builds target macOS 13 Ventura or later.
+ReturnRadar 1.0.0 is published as a Developer ID-signed, Apple-notarized,
+stapled universal macOS DMG. Download it from the
+[v1.0.0 GitHub Release](https://github.com/saagpatel/ReturnRadar/releases/tag/v1.0.0).
+See the [distribution runbook](docs/DISTRIBUTION.md),
+[privacy summary](docs/PRIVACY.md), and [1.0.0 release notes](docs/releases/v1.0.0.md).
+Direct-distribution builds target macOS 13 Ventura or later.
 
 ## Tech Stack
 

@@ -24,11 +24,11 @@ Receipt and policy capture runs locally with macOS Vision and PDFKit. It require
 
 | Decision | Choice | Why |
 |---|---|---|
-| Notifications when app closed | launchd login agent plist | No daemon required; plist opens app at login to check deadlines |
+| Notifications when app closed | launchd login agent plist | No daemon required; plist invokes the headless checker on load and daily at 09:00 |
 | Rebate tracking | status field only, no doc upload | Core value without scope creep |
 | Warranty tracking | Full CRUD (active/expiring/expired/claimed) + notifications | Shipped in v1.0 |
 | Receipt/policy capture | On-device Vision/PDFKit extraction + deterministic confidence gate | No upload; explicit confirmation required |
-| Retailer defaults | Pre-seeded SQLite table, top 20 retailers | Eliminates common entry friction |
+| Retailer defaults | Pre-seeded SQLite table, 19 named retailers plus Other | Eliminates common entry friction |
 | Styling | Tailwind + shadcn/ui | Fast component assembly |
 
 ## Conventions

@@ -59,7 +59,7 @@ jobs:
       - run: cargo test --manifest-path src-tauri/Cargo.toml --locked
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
       - name: Install cargo-audit
-        uses: taiki-e/install-action@9534c84618278caac52cb373bb164ed464dbd8af # v2
+        uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0 # v2
         with:
           tool: cargo-audit@0.22.2
       - run: bash script/check_rustsec.sh
